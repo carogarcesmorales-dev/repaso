@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego: repaso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f0f4f8;
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .cell {
+            aspect-ratio: 1 / 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 5px;
+            font-size: 0.8rem;
+            position: relative;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .cell-active {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .cell-special {
+            background-color: #fef3c7;
+            font-weight: bold;
+        }
+
+        .cell-question {
+            background-color: #dcfce7;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .token-container {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .token {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .player-red { background-color: #ef4444; }
+        .player-blue { background-color: #3b82f6; }
+        .player-green { background-color: #10b981; }
+        .player-yellow { background-color: #f59e0b; }
+
+        .dice-container {
+            perspective: 1000px;
+            width: 60px;
+            height: 60px;
+        }
+
+        #dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-out;
+            cursor: pointer;
+        }
+
+        .dice-face {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Modal simple */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto text-center mb-8">
+        <h1 class="text-4xl font-bold text-slate-800 mb-2">Juego: repaso</h1>
+        <p class="text-slate-600 italic">Tira el dado y responde en español para avanzar.</p>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-8 items-start justify-center">
+        
+        <!-- Panel de Jugadores -->
+        <div class="w-full md:w-64 bg-white p-6 rounded-2xl shadow-md order-2 md:order-1">
+            <h2 class="text-xl font-bold mb-4 text-slate-700">Jugadores</h2>
+            <div id="player-list" class="space-y-3">
+                <!-- Players inserted here -->
+            </div>
+            
+            <div class="mt-8 flex flex-col items-center">
+                <div class="dice-container mb-4" onclick="rollDice()">
+                    <div id="dice">
+                        <div class="dice-face" style="transform: translateZ(30px)">1</div>
+                    </div>
+                </div>
+                <button id="roll-btn" onclick="rollDice()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-all transform active:scale-95 shadow-lg">
+                    Tirar Dado
+                </button>
+            </div>
+        </div>
+
+        <!-- Tablero -->
+        <div id="board" class="board-container order-1 md:order-2">
+            <!-- Cells inserted here -->
+        </div>
+
+    </div>
+
+    <!-- Modal de Casilla -->
+    <div id="modal">
+        <div class="modal-content">
+            <h3 id="modal-player" class="text-sm font-bold uppercase tracking-widest text-blue-500 mb-2">Jugador 1</h3>
+            <div id="modal-task" class="text-2xl font-bold text-slate-800 mb-6">¿Cómo estás?</div>
+            <button onclick="closeModal()" class="bg-slate-800 text-white px-8 py-2 rounded-lg font-bold">Hecho / Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const boardData = [
+            { type: 'start', text: '¡INICIO!<br>Saludar 07.00' },
+            { type: 'task', text: '¿Qué haces en tu tiempo libre?' },
+            { type: 'task', text: 'Leer en voz alta: 11-20' },
+            { type: 'question', text: '¿?' },
+            { type: 'task', text: 'Conjugar:<br>TENER' },
+            { type: 'task', text: '¿Cómo te llamas?' },
+            { type: 'task', text: '¿Cómo estás?' },
+            { type: 'task', text: 'Saludar 14.30' },
+            { type: 'question', text: '¿?' },
+            { type: 'task', text: 'El plural:<br>un amigo' },
+            { type: 'task', text: 'Leer en voz alta: 0-10' },
+            { type: 'task', text: '¿De dónde eres?' },
+            { type: 'task', text: '¿Dónde vives?' },
+            { type: 'task', text: 'Conjugar:<br>ESCUCHAR' },
+            { type: 'task', text: 'Conjugar:<br>SER' },
+            { type: 'task', text: 'Leer en voz alta: 21-30' },
+            { type: 'task', text: '¿Estás casado/a?' },
+            { type: 'task', text: 'Conjugar:<br>HACER' },
+            { type: 'task', text: '¿Qué tal hablas español?' },
+            { type: 'question', text: '¿?' },
+            { type: 'task', text: 'Saludar 22.15' },
+            { type: 'task', text: 'El plural:<br>su amigo' },
+            { type: 'question', text: '¿?' },
+            { type: 'task', text: 'El plural:<br>el país' },
+            { type: 'question', text: '¿?' },
+            { type: 'task', text: 'El plural:<br>nuestra casa' },
+            { type: 'end', text: '¡META!' }
+        ];
+
+        let players = [
+            { id: 0, name: 'Jugador Rojo', pos: 0, color: 'player-red' },
+            { id: 1, name: 'Jugador Azul', pos: 0, color: 'player-blue' },
+            { id: 2, name: 'Jugador Verde', pos: 0, color: 'player-green' },
+            { id: 3, name: 'Jugador Amarillo', pos: 0, color: 'player-yellow' }
+        ];
+
+        let currentPlayerIndex = 0;
+        let isRolling = false;
+
+        function initBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            boardData.forEach((cell, index) => {
+                const div = document.createElement('div');
+                div.className = `cell ${cell.type === 'question' ? 'cell-question' : ''} ${cell.type === 'start' || cell.type === 'end' ? 'cell-special' : ''}`;
+                div.id = `cell-${index}`;
+                div.innerHTML = `<span>${cell.text}</span><div class="token-container" id="token-container-${index}"></div>`;
+                boardEl.appendChild(div);
+            });
+            updateTokens();
+            updatePlayerList();
+        }
+
+        function updateTokens() {
+            // Limpiar todos los contenedores
+            boardData.forEach((_, i) => {
+                document.getElementById(`token-container-${i}`).innerHTML = '';
+            });
+
+            // Colocar fichas
+            players.forEach(p => {
+                const container = document.getElementById(`token-container-${p.pos}`);
+                const token = document.createElement('div');
+                token.className = `token ${p.color}`;
+                container.appendChild(token);
+            });
+        }
+
+        function updatePlayerList() {
+            const listEl = document.getElementById('player-list');
+            listEl.innerHTML = '';
+            players.forEach((p, index) => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl flex items-center gap-3 transition-all ${currentPlayerIndex === index ? 'bg-blue-100 ring-2 ring-blue-500 scale-105 font-bold' : 'bg-slate-50'}`;
+                div.innerHTML = `
+                    <div class="token ${p.color}"></div>
+                    <span class="flex-1">${p.name}</span>
+                    <span class="text-xs text-slate-400">Casilla ${p.pos}</span>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+            
+            const roll = Math.floor(Math.random() * 6) + 1;
+            const dice = document.getElementById('dice');
+            const btn = document.getElementById('roll-btn');
+            
+            btn.disabled = true;
+            dice.style.transform = `rotateX(${Math.random() * 1000}deg) rotateY(${Math.random() * 1000}deg)`;
+
+            setTimeout(() => {
+                dice.style.transform = `rotateX(0deg) rotateY(0deg)`;
+                dice.innerHTML = `<div class="dice-face">${roll}</div>`;
+                movePlayer(roll);
+                isRolling = false;
+                btn.disabled = false;
+            }, 1000);
+        }
+
+        function movePlayer(steps) {
+            let player = players[currentPlayerIndex];
+            let newPos = player.pos + steps;
+            
+            if (newPos >= boardData.length) newPos = boardData.length - 1;
+            
+            player.pos = newPos;
+            updateTokens();
+            
+            setTimeout(() => {
+                showTask(player, boardData[newPos]);
+            }, 600);
+        }
+
+        function showTask(player, cell) {
+            const modal = document.getElementById('modal');
+            const taskText = document.getElementById('modal-task');
+            const playerText = document.getElementById('modal-player');
+            
+            playerText.innerText = player.name;
+            playerText.className = `text-sm font-bold uppercase tracking-widest mb-2 ${player.color.replace('player-', 'text-')}`;
+            
+            if (cell.type === 'question') {
+                taskText.innerHTML = "¡Pregunta libre!<br><span class='text-lg font-normal'>Haz una pregunta al compañero de la derecha.</span>";
+            } else {
+                taskText.innerHTML = cell.text;
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            updatePlayerList();
+        }
+
+        window.onload = initBoard;
+    </script>
+</body>
+</html>
