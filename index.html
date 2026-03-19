@@ -10,69 +10,85 @@
         
         body {
             font-family: 'Outfit', sans-serif;
-            background-color: #f0f4f8;
+            background-color: #f8fafc;
         }
 
+        /* Contenedor principal del tablero */
         .board-container {
             position: relative;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            padding: 20px;
-            overflow: hidden;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+            padding: 40px;
+            overflow: visible;
+            min-height: 850px; /* Suficiente espacio para que quepa todo */
+            border: 1px solid #e2e8f0;
         }
 
         .node {
-            width: 80px;
-            height: 80px;
+            width: 85px;
+            height: 85px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             font-size: 0.75rem;
-            font-weight: bold;
-            padding: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 3px solid #3b82f6;
+            font-weight: 700;
+            padding: 12px;
+            cursor: default;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid #3b82f6;
             background: white;
             position: absolute;
             z-index: 10;
+            line-height: 1.2;
+            color: #1e293b;
         }
 
         .node.active {
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            transform: scale(1.15);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
             border-color: #ef4444;
-            background: #eff6ff;
+            background: #fef2f2;
         }
 
         .node.special {
             background-color: #1e293b;
             color: white;
-            border-color: #1e293b;
+            border-color: #475569;
+        }
+
+        .node.finish {
+            background-color: #10b981;
+            color: white;
+            border-color: #059669;
+            font-size: 0.9rem;
         }
 
         .path-line {
             position: absolute;
-            background: #cbd5e1;
+            background: #e2e8f0;
             height: 6px;
             z-index: 1;
             transform-origin: left center;
+            border-radius: 3px;
         }
 
         .player-token {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             background: #ef4444;
             border-radius: 50%;
             position: absolute;
-            z-index: 20;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 3px solid white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 25;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 4px solid white;
+            box-shadow: 0 8px 15px rgba(239, 68, 68, 0.4);
             pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .dice-container {
@@ -86,7 +102,7 @@
             height: 60px;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 1s ease-out;
+            transition: transform 1s cubic-bezier(0.2, 0.8, 0.3, 1.1);
             cursor: pointer;
         }
 
@@ -95,17 +111,16 @@
             width: 60px;
             height: 60px;
             background: #3b82f6;
-            border: 2px solid white;
-            border-radius: 10px;
+            border: 2px solid #2563eb;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
             color: white;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            font-weight: bold;
         }
 
-        /* Positions for dice sides */
         .side-1 { transform: rotateY(0deg) translateZ(30px); }
         .side-2 { transform: rotateY(90deg) translateZ(30px); }
         .side-3 { transform: rotateY(180deg) translateZ(30px); }
@@ -113,115 +128,134 @@
         .side-5 { transform: rotateX(90deg) translateZ(30px); }
         .side-6 { transform: rotateX(-90deg) translateZ(30px); }
 
-        @media (max-width: 640px) {
-            .board-container { height: auto !important; transform: scale(0.65); transform-origin: top left; }
+        @media (max-width: 1024px) {
+            .board-wrapper {
+                transform: scale(0.85);
+                transform-origin: top left;
+                width: 100%;
+                overflow-x: auto;
+            }
         }
     </style>
 </head>
-<body class="flex flex-col items-center p-4 min-h-screen">
+<body class="flex flex-col items-center p-6 min-h-screen">
 
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Una Entrevista</h1>
-    <p class="text-gray-600 mb-6 text-center max-w-md">
-        Lanza el dado y avanza. Responde a la pregunta o realiza la tarea de la casilla en la que caigas.
-    </p>
+    <div class="max-w-6xl w-full">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-black text-slate-800 mb-2">Una Entrevista</h1>
+            <p class="text-slate-500 font-medium">Práctica de español para adultos</p>
+        </header>
 
-    <div class="flex flex-wrap justify-center gap-8 mb-8 w-full max-w-5xl">
-        <!-- Tablero -->
-        <div id="board" class="board-container w-full h-[650px] md:w-[800px]">
-            <div id="token" class="player-token"></div>
-        </div>
-
-        <!-- Controles -->
-        <div class="flex flex-col items-center gap-6 bg-white p-6 rounded-2xl shadow-lg h-fit">
-            <div class="dice-container flex items-center justify-center">
-                <div id="dice" onclick="rollDice()">
-                    <div class="dice-side side-1">1</div>
-                    <div class="dice-side side-2">2</div>
-                    <div class="dice-side side-3">3</div>
-                    <div class="dice-side side-4">4</div>
-                    <div class="dice-side side-5">5</div>
-                    <div class="dice-side side-6">6</div>
+        <div class="flex flex-col lg:flex-row justify-center gap-12 items-start">
+            
+            <!-- Tablero -->
+            <div class="board-wrapper flex-shrink-0">
+                <div id="board" class="board-container w-[850px]">
+                    <div id="token" class="player-token">
+                        <span class="text-white text-[11px] font-black">TÚ</span>
+                    </div>
                 </div>
             </div>
-            <button onclick="rollDice()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition transform active:scale-95 shadow-md">
-                Lanzar Dado
-            </button>
-            <div class="text-center">
-                <p class="text-sm text-gray-500">Último resultado:</p>
-                <p id="result" class="text-2xl font-bold text-blue-600">-</p>
+
+            <!-- Controles Lateral -->
+            <div class="flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl border border-slate-100 lg:sticky lg:top-10 w-full lg:w-72">
+                <div class="dice-container flex items-center justify-center">
+                    <div id="dice" onclick="rollDice()">
+                        <div class="dice-side side-1">1</div>
+                        <div class="dice-side side-2">2</div>
+                        <div class="dice-side side-3">3</div>
+                        <div class="dice-side side-4">4</div>
+                        <div class="dice-side side-5">5</div>
+                        <div class="dice-side side-6">6</div>
+                    </div>
+                </div>
+                
+                <div class="w-full space-y-4">
+                    <button id="rollBtn" onclick="rollDice()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all transform active:scale-95 shadow-lg shadow-blue-200">
+                        Lanzar Dado
+                    </button>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+                        <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Resultado</p>
+                        <p id="result" class="text-4xl font-black text-blue-600">-</p>
+                    </div>
+                </div>
+
+                <button onclick="resetGame()" class="text-sm font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-tighter">Reiniciar partida</button>
             </div>
-            <button onclick="resetGame()" class="text-sm text-gray-400 hover:text-red-500 underline">Reiniciar juego</button>
         </div>
     </div>
 
     <!-- Modal de Tarea -->
-    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform transition-all text-center">
-            <h2 id="modal-title" class="text-blue-600 font-bold text-xl mb-4">¡Casilla Alcanzada!</h2>
-            <div id="modal-content" class="text-2xl font-medium text-gray-800 mb-8">
+    <div id="modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center z-50 p-6">
+        <div class="bg-white rounded-[2rem] p-10 max-w-md w-full shadow-2xl transform transition-all text-center">
+            <div id="modal-icon" class="text-5xl mb-6">💬</div>
+            <h2 class="text-blue-600 font-black text-sm uppercase tracking-widest mb-2">Instrucción</h2>
+            <div id="modal-content" class="text-2xl font-bold text-slate-800 mb-10 leading-snug">
                 ¿Cómo estás?
             </div>
-            <button onclick="closeModal()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
-                ¡Hecho!
+            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl hover:bg-blue-600 transition-all shadow-xl">
+                ¡Entendido!
             </button>
         </div>
     </div>
 
     <script>
+        // Coordenadas ajustadas para asegurar que META sea visible y el camino sea equilibrado
         const nodesData = [
-            { text: "¡INICIO!", x: 50, y: 50 },
-            { text: "¿Cómo estás?", x: 150, y: 30 },
-            { text: "Saludar 14:30", x: 250, y: 80 },
-            { text: "¿?", x: 380, y: 50, special: true },
-            { text: "El plural: un amigo", x: 480, y: 100 },
-            { text: "Leer en voz alta: 0-10", x: 600, y: 150 },
-            { text: "Conjugar: SER", x: 550, y: 280 },
-            { text: "¿De dónde eres?", x: 420, y: 220 },
-            { text: "Conjugar: ESCUCHAR", x: 350, y: 330 },
-            { text: "¿Dónde vives?", x: 200, y: 310 },
-            { text: "¿Cómo te llamas?", x: 120, y: 180 },
-            { text: "Conjugar: TENER", x: 40, y: 280 },
-            { text: "¿?", x: 60, y: 400, special: true },
-            { text: "Leer en voz alta: 11-20", x: 180, y: 450 },
-            { text: "¿Estás casado/a?", x: 320, y: 410 },
-            { text: "Conjugar: HACER", x: 450, y: 480 },
-            { text: "Leer en voz alta: 21-30", x: 600, y: 430 },
-            { text: "¿?", x: 650, y: 550, special: true },
-            { text: "El plural: nuestra casa", x: 550, y: 650 },
-            { text: "¿?", x: 450, y: 620, special: true },
-            { text: "Saludar 22:15", x: 550, y: 540 },
-            { text: "¿Qué tal hablas español?", x: 380, y: 570 },
-            { text: "El plural: su amigo", x: 280, y: 630 },
-            { text: "¿?", x: 200, y: 550, special: true },
-            { text: "El plural: el país", x: 80, y: 650 },
-            { text: "¿Qué haces en tu tiempo libre?", x: 60, y: 550 },
-            { text: "Saludar 07:00", x: 150, y: 650 },
-            { text: "¡META!", x: 300, y: 680 }
+            { text: "INICIO", x: 60, y: 40 },
+            { text: "¿Cómo estás?", x: 180, y: 30 },
+            { text: "Saludar 14:30", x: 300, y: 80 },
+            { text: "¿?", x: 420, y: 30, special: true },
+            { text: "El plural: un amigo", x: 540, y: 90 },
+            { text: "Leer en voz alta: 0-10", x: 670, y: 140 },
+            { text: "Conjugar: SER", x: 610, y: 280 },
+            { text: "¿De dónde eres?", x: 480, y: 210 },
+            { text: "Conjugar: ESCUCHAR", x: 380, y: 340 },
+            { text: "¿Dónde vives?", x: 230, y: 310 },
+            { text: "¿Cómo te llamas?", x: 130, y: 190 },
+            { text: "Conjugar: TENER", x: 40, y: 300 },
+            { text: "¿?", x: 60, y: 440, special: true },
+            { text: "Leer en voz alta: 11-20", x: 190, y: 470 },
+            { text: "¿Estás casado/a?", x: 340, y: 420 },
+            { text: "Conjugar: HACER", x: 480, y: 500 },
+            { text: "Leer en voz alta: 21-30", x: 630, y: 440 },
+            { text: "¿?", x: 680, y: 570, special: true },
+            { text: "El plural: nuestra casa", x: 550, y: 680 },
+            { text: "¿?", x: 430, y: 650, special: true },
+            { text: "Saludar 22:15", x: 540, y: 550 },
+            { text: "¿Qué tal hablas español?", x: 380, y: 560 },
+            { text: "El plural: su amigo", x: 270, y: 660 },
+            { text: "¿?", x: 200, y: 560, special: true },
+            { text: "El plural: el país", x: 70, y: 670 },
+            { text: "¿Qué haces en tu tiempo libre?", x: 60, y: 540 },
+            { text: "Saludar 07:00", x: 170, y: 690 },
+            { text: "META", x: 320, y: 760, finish: true } // Casilla final ahora bien posicionada
         ];
 
         let currentPosition = 0;
+        let isRolling = false;
         const board = document.getElementById('board');
         const token = document.getElementById('token');
         const dice = document.getElementById('dice');
         const modal = document.getElementById('modal');
         const modalContent = document.getElementById('modal-content');
         const resultDisplay = document.getElementById('result');
+        const rollBtn = document.getElementById('rollBtn');
 
-        // Inicializar Tablero
         function initBoard() {
             nodesData.forEach((node, index) => {
                 const el = document.createElement('div');
-                el.className = `node ${node.special ? 'special' : ''}`;
+                el.className = `node ${node.special ? 'special' : ''} ${node.finish ? 'finish' : ''}`;
                 el.style.left = node.x + 'px';
                 el.style.top = node.y + 'px';
                 el.innerText = node.text;
                 el.id = `node-${index}`;
                 board.appendChild(el);
 
-                // Dibujar líneas de camino
                 if (index > 0) {
                     const prev = nodesData[index - 1];
-                    drawLine(prev.x + 40, prev.y + 40, node.x + 40, node.y + 40);
+                    drawLine(prev.x + 42, prev.y + 42, node.x + 42, node.y + 42);
                 }
             });
             updateTokenPosition();
@@ -241,30 +275,27 @@
 
         function updateTokenPosition() {
             const node = nodesData[currentPosition];
-            token.style.left = (node.x + 20) + 'px';
-            token.style.top = (node.y + 20) + 'px';
+            token.style.left = (node.x + 18) + 'px';
+            token.style.top = (node.y + 18) + 'px';
             
-            // Highlight active node
             document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
             document.getElementById(`node-${currentPosition}`).classList.add('active');
         }
 
         function rollDice() {
-            if (modal.style.display === 'flex') return;
+            if (isRolling || modal.style.display === 'flex') return;
+            
+            isRolling = true;
+            rollBtn.disabled = true;
 
             const roll = Math.floor(Math.random() * 6) + 1;
             const rotations = [
-                [0, 0, 0],       // 1
-                [0, 90, 0],      // 2
-                [0, 180, 0],     // 3
-                [0, -90, 0],     // 4
-                [-90, 0, 0],     // 5
-                [90, 0, 0]       // 6
+                [0, 0, 0], [0, 90, 0], [0, 180, 0], 
+                [0, -90, 0], [-90, 0, 0], [90, 0, 0]
             ];
 
             const [x, y, z] = rotations[roll - 1];
-            // Añadimos vueltas extra para efecto visual
-            dice.style.transform = `rotateX(${x + 720}deg) rotateY(${y + 720}deg) rotateZ(${z}deg)`;
+            dice.style.transform = `rotateX(${x + 1440}deg) rotateY(${y + 1440}deg) rotateZ(${z}deg)`;
             
             setTimeout(() => {
                 resultDisplay.innerText = roll;
@@ -281,30 +312,44 @@
                     i++;
                 } else {
                     clearInterval(interval);
-                    setTimeout(showTask, 500);
+                    isRolling = false;
+                    rollBtn.disabled = false;
+                    setTimeout(showTask, 600);
                 }
             }, 300);
         }
 
         function showTask() {
-            const task = nodesData[currentPosition].text;
-            if (task === "¡META!" || task === "¡INICIO!") {
-                if (task === "¡META!") {
-                    modalContent.innerHTML = "🎉 ¡Felicidades! Has completado la entrevista.";
-                    modal.style.display = 'flex';
-                }
+            const node = nodesData[currentPosition];
+            const task = node.text;
+            const iconEl = document.getElementById('modal-icon');
+
+            if (node.finish) {
+                iconEl.innerText = "🏆";
+                modalContent.innerHTML = "¡FELICIDADES!<br>Has terminado la entrevista.";
+                modal.style.display = 'flex';
                 return;
             }
+            if (task === "INICIO") return;
 
             let content = task;
-            if (task === "¿?") {
-                content = "🤔 Inventa una pregunta para tu compañero (o respóndela tú mismo si juegas solo).";
+            if (node.special) {
+                iconEl.innerText = "❓";
+                content = "Hazle una pregunta en español a la persona de tu derecha.";
             } else if (task.includes("Conjugar")) {
-                content = `📝 ${task}<br><small class='text-sm text-blue-400'>(Dilo en todas las personas: yo, tú, él...)</small>`;
+                iconEl.innerText = "✍️";
+                content = `Conjuga el verbo:<br><span class='text-blue-600 font-black'>${task.split(':')[1]}</span>`;
             } else if (task.includes("Saludar")) {
-                content = `👋 ${task}<br><small class='text-sm text-blue-400'>(Ej: ¡Buenas tardes!)</small>`;
+                iconEl.innerText = "👋";
+                content = `Dime el saludo adecuado para las:<br><span class='text-blue-600 font-black'>${task.split(' ')[1]}</span>`;
+            } else if (task.includes("El plural")) {
+                iconEl.innerText = "👥";
+                content = `Pasa esta expresión a plural:<br><span class='text-blue-600 font-black'>${task.split(':')[1]}</span>`;
             } else if (task.includes("Leer")) {
-                content = `📖 ${task}`;
+                iconEl.innerText = "🔢";
+                content = `Lee los números en voz alta:<br><span class='text-blue-600 font-black'>${task.split(':')[1]}</span>`;
+            } else {
+                iconEl.innerText = "💬";
             }
 
             modalContent.innerHTML = content;
